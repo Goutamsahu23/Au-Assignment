@@ -1,20 +1,32 @@
 # AI Usage Disclosure
 
-AI tools are allowed. We want to know **how** you used them, because using them well is a
-skill. Honest answers are never held against you. Discovering undisclosed use is.
-
 ## Tools used
-_e.g. Claude, Cursor, Copilot, ChatGPT, or "none"_
+Cursor (chat / autocomplete)
 
 ## What I used them for
-_e.g. "scaffolded the FastAPI receiver", "explained Temporal activity retries", "wrote the first
-draft of the phone-normalisation tests"_
+- Breaking the assignment README into a checklist so I didn’t miss edge cases
+- Speeding up boilerplate: package layout, argparse CLI, repetitive CSV/JSON writers
+- Looking up small things while coding (psycopg usage, Fernet key derivation, pytest `skipif`)
+- Cleaning up wording in docs after I already knew what I wanted to say
+
+I did not paste the whole assignment in and ask it to “build everything.” I worked feature by feature (normalise → lead ingest → events → reports) and used Cursor when stuck or to move faster on obvious code.
 
 ## What I wrote or decided myself
-_The parts that are your own thinking: design, data model, edge-case handling..._
+- Picking Assignment A and using Postgres
+- The overall design: ingest only stores facts; linking and metrics happen at report time (so late leads / orphans work)
+- The table design (`leads`, `lead_rows`, `events`, `event_lines`, `ingested_files`) and what goes in each
+- How to protect PII (hash phone for matching, keep last 4 for masking, encrypt name)
+- Idempotency with file hash + unique `event_id`
+- Implementing and checking the messy rules myself: phone formats, day-first dates, disposition override vs set, lead buckets
+- Choosing which tests matter most and running the full pipeline on generated data until the reports looked right
 
 ## Where the AI was wrong or unhelpful
-_At least one example of output you rejected or had to fix, and how you noticed._
+- Suggested a messy lead-merge that kept re-encrypting / reconstructing name in a confusing way — I rewrote that to “last non-null wins” and never change `batch_id`
+- Gave PowerShell one-liners that broke on escaping; I ran simpler commands instead
+- Sometimes proposed stretch ideas (SQL-only aggregates, etc.) when I still needed the core reports correct — I ignored those until later
 
 ## How I verified AI-generated code
-_Tests, manual runs, reading it line by line..._
+- Read every file I kept; changed anything I didn’t understand
+- Unit tests for the rules that are easy to get wrong
+- Full run: generate data → ingest both drops → write reports → spot-check CSVs and `data_quality.json`
+- Re-ran ingest on the same drop and confirmed reports did not change
